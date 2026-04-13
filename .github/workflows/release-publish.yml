@@ -2,55 +2,34 @@ name: Release & Publish
 
 on:
   push:
-    tags:
-      - 'v*.*.*'
-  workflow_dispatch:
-    inputs:
-      version:
-        description: 'Version to release (e.g., v0.1.0)'
-        required: true
-        type: string
+    tags: ['v*.*.*']
 
 permissions:
   contents: write
 
 jobs:
   validate:
-    name: Validate Release
+    name: Validate & Build
     runs-on: ubuntu-latest
     timeout-minutes: 10
     outputs:
       version: ${{ steps.get-version.outputs.version }}
       version-number: ${{ steps.get-version.outputs.version-number }}
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
         with:
-          fetch-depth: 0
+          node-version: '20'
+          cache: 'npm'
 
       - name: Get version
         id: get-version
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            VERSION="${{ github.event.inputs.version }}"
-          else
-            VERSION="${GITHUB_REF#refs/tags/}"
-          fi
-          # Ensure version starts with 'v'
-          if [[ "$VERSION" != v* ]]; then
-            echo "Error: version must start with 'v' (got: $VERSION)"
-            exit 1
-          fi
+          VERSION="${GITHUB_REF#refs/tags/}"
           VERSION_NUMBER="${VERSION#v}"
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "version-number=$VERSION_NUMBER" >> $GITHUB_OUTPUT
-          echo "Release version: $VERSION"
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
@@ -73,11 +52,11 @@ jobs:
     needs: validate
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    env:
+      VERSION: ${{ needs.validate.outputs.version }}
+      VERSION_NUMBER: ${{ needs.validate.outputs.version-number }}
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+      - uses: actions/checkout@v4
 
       - name: Download build artifact
         uses: actions/download-artifact@v4
@@ -85,59 +64,30 @@ jobs:
           name: dist
           path: dist/
 
-      - name: Extract changelog for version
-        id: changelog
+      - name: Extract changelog for this version
         run: |
-          VERSION="${{ needs.validate.outputs.version-number }}"
-          echo "Extracting changelog for version: $VERSION"
-
-          # Try both standard-version format (###) and Keep a Changelog format (##)
-          CHANGELOG=$(awk "/### \[$VERSION\]/,/(^### \[|^## \[)/" CHANGELOG.md | sed '$d' | tail -n +2)
-
-          if [ -z "$CHANGELOG" ] || [ $(echo "$CHANGELOG" | wc -l) -lt 2 ]; then
-            CHANGELOG=$(awk "/## \[$VERSION\]/,/(^### \[|^## \[)/" CHANGELOG.md | sed '$d' | tail -n +2)
-          fi
-
-          if [ -z "$CHANGELOG" ] || [ $(echo "$CHANGELOG" | wc -l) -lt 2 ]; then
-            CHANGELOG="Release $VERSION
-
-          See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for full details."
-          fi
-
-          {
-            echo "## [$VERSION] - $(date +%Y-%m-%d)"
-            echo ""
-            echo "$CHANGELOG"
-            echo ""
-            echo "---"
-            echo ""
-            echo "**Full Changelog**: https://github.com/${{ github.repository }}/compare/v$VERSION...HEAD"
-          } > /tmp/release-notes.md
-
-          echo "Changelog extracted successfully"
+          NOTES=$(awk "/^## \[$VERSION_NUMBER\]/{found=1; next} found && /^## /{exit} found{print}" CHANGELOG.md)
+          echo "$NOTES" > release-notes.md
 
       - name: Create distribution archives
         run: |
-          VERSION="${{ needs.validate.outputs.version-number }}"
-          cd dist
-          tar -czf "../astro-pulsar-${VERSION}.tar.gz" .
-          cd ..
-          zip -r "astro-pulsar-${VERSION}.zip" dist/
+          cd dist && tar -czf "../astro-pulsar-${VERSION_NUMBER}.tar.gz" . && cd ..
+          zip -r "astro-pulsar-${VERSION_NUMBER}.zip" dist/
 
-      - name: Create GitHub Release with assets
-        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65  # v2
-        with:
-          tag_name: ${{ needs.validate.outputs.version }}
-          name: ${{ needs.validate.outputs.version }}
-          body_path: /tmp/release-notes.md
-          draft: false
-          prerelease: ${{ contains(needs.validate.outputs.version-number, '-') || contains(needs.validate.outputs.version-number, 'alpha') || contains(needs.validate.outputs.version-number, 'beta') }}
-          generate_release_notes: false
-          files: |
-            astro-pulsar-${{ needs.validate.outputs.version-number }}.tar.gz
-            astro-pulsar-${{ needs.validate.outputs.version-number }}.zip
+      - name: Create GitHub Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PRERELEASE_FLAG=""
+          if [[ "$VERSION_NUMBER" == *"-"* ]]; then
+            PRERELEASE_FLAG="--prerelease"
+          fi
+          gh release create "$VERSION" \
+            --title "$VERSION" \
+            --notes-file release-notes.md \
+            $PRERELEASE_FLAG \
+            "astro-pulsar-${VERSION_NUMBER}.tar.gz" \
+            "astro-pulsar-${VERSION_NUMBER}.zip"
 
   notify:
     name: Notify Release
@@ -146,13 +96,15 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Release Summary
+        env:
+          VERSION: ${{ needs.validate.outputs.version }}
+          VERSION_NUMBER: ${{ needs.validate.outputs.version-number }}
         run: |
           echo "## Release Published!" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Version:** ${{ needs.validate.outputs.version }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Release URL:** https://github.com/${{ github.repository }}/releases/tag/${{ needs.validate.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** $VERSION" >> $GITHUB_STEP_SUMMARY
+          echo "**Release URL:** https://github.com/${{ github.repository }}/releases/tag/$VERSION" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Assets" >> $GITHUB_STEP_SUMMARY
-          echo "- \`astro-pulsar-${{ needs.validate.outputs.version-number }}.tar.gz\`" >> $GITHUB_STEP_SUMMARY
-          echo "- \`astro-pulsar-${{ needs.validate.outputs.version-number }}.zip\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`astro-pulsar-${VERSION_NUMBER}.tar.gz\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`astro-pulsar-${VERSION_NUMBER}.zip\`" >> $GITHUB_STEP_SUMMARY

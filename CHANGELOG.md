@@ -1,8 +1,30 @@
 # Changelog
 
-All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
+All notable changes to this project will be documented in this file.
 
-### [0.2.2](https://github.com/amirdaraee/astro-pulsar/compare/v0.2.1...v0.2.2) (2025-11-11)
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+## [0.3.0] - 2026-04-13
+
+### Added
+- CI workflow that runs type checking and build on every push to `main` and every pull request
+- `Footer` component `showCopyright` and `compact` props to control copyright visibility and padding
+- `Layout` component `compactFooter` prop, forwarded to `Footer`
+
+### Changed
+- Upgraded to Astro 6 with the new loader-based content collections API (`src/content.config.ts`, `glob()` loader)
+- Upgraded to Tailwind CSS v4, configured via `@tailwindcss/vite` Vite plugin — no config file needed; dark mode now uses `@custom-variant` in CSS
+- Replaced `standard-version` with plain `npm version` for releases — changelog is now maintained manually in Keep a Changelog format
+- Simplified release workflow: replaced `softprops/action-gh-release` with built-in `gh release create`; build artifact is shared between jobs via `actions/upload-artifact` to avoid a double build
+- Release pipeline now uses `env:` blocks for all dynamic values to eliminate injection risk
+
+### Fixed
+- Changelog extraction `awk` pattern in release workflow now correctly handles Keep a Changelog format
+
+## [0.2.2] - 2025-11-11
 
 ### Fixed
 - Fixed GitHub Actions build failures
@@ -13,7 +35,7 @@ All notable changes to this project will be documented in this file. See [standa
 - Improved GitHub release notes workflow to extract full changelog content
 - Updated release automation to handle both standard-version and Keep a Changelog formats
 
-### [0.2.1](https://github.com/amirdaraee/astro-pulsar/compare/v0.2.0...v0.2.1) (2025-11-11)
+## [0.2.1] - 2025-11-11
 
 ### Fixed
 - Fixed build errors caused by `showCopyright` prop references
@@ -49,7 +71,7 @@ All notable changes to this project will be documented in this file. See [standa
 - Initial release of Astro Pulsar theme
 - Dark mode support with localStorage persistence
 - SEO optimization (meta tags, Open Graph, Twitter Cards, JSON-LD)
-- Responsive design with pure Tailwind CSS (no Bootstrap)
+- Responsive design with pure Tailwind CSS
 - Blog functionality with Astro Content Collections
 - Syntax highlighting with Prism (GitHub Dark theme)
 - Automatic sitemap generation
@@ -60,49 +82,9 @@ All notable changes to this project will be documented in this file. See [standa
 - Custom 404 error page
 - Print-friendly styles for blog posts
 - Skip-to-content link for accessibility
-- Comprehensive testing documentation and test suite
-- Test blog post for verifying theme functionality
-- Versioning and changelog system with standard-version
-- Contributing guidelines and commit conventions
-
-### Components
 - Layout system with customizable header and footer
 - SEO component for meta tags
 - Dark mode toggle component
 - Responsive header with mobile menu
 - Social links footer
-
-### Pages
-- Homepage with centered welcome message
-- Blog listing page with post cards
-- Individual blog post pages with metadata
-- About page template
-- 404 error page
-
-### Configuration
-- Centralized site configuration in `src/config.ts`
-- TypeScript support with strict type checking
-- Tailwind CSS configuration with dark mode support
-- Astro configuration with sitemap integration
-- Standard-version configuration for automated releases
-
----
-
-## Version History Format
-
-### Types of Changes
-- `Added` - New features
-- `Changed` - Changes in existing functionality
-- `Deprecated` - Soon-to-be removed features
-- `Removed` - Removed features
-- `Fixed` - Bug fixes
-- `Security` - Security vulnerability fixes
-
-### Semantic Versioning
-- **MAJOR** version (X.0.0): Incompatible API changes
-- **MINOR** version (0.X.0): New functionality in a backwards compatible manner
-- **PATCH** version (0.0.X): Backwards compatible bug fixes
-
-[Unreleased]: https://github.com/amirdaraee/astro-pulsar/compare/v0.2.0...HEAD
-[0.2.0]: https://github.com/amirdaraee/astro-pulsar/compare/v0.1.0...v0.2.0
-[0.1.0]: https://github.com/amirdaraee/astro-pulsar/releases/tag/v0.1.0
+- Homepage, blog listing, individual post, about, and 404 pages
