@@ -2,6 +2,8 @@
 import { getCollection, render } from 'astro:content';
 import Layout from '../../layouts/Layout.astro';
 
+const base = import.meta.env.BASE_URL;
+
 export async function getStaticPaths() {
   const blogPosts = await getCollection('blog');
   return blogPosts.map((post) => ({
@@ -86,9 +88,9 @@ const structuredData = {
         {post.data.photo && (
           <figure class="mb-4">
             <picture>
-              <source srcset={`/${post.data.photo.replace(/\.(png|jpg|jpeg)$/, '.webp')}`} type="image/webp">
+              <source srcset={`${base}${post.data.photo.replace(/^\//, '').replace(/\.(png|jpg|jpeg)$/, '.webp')}`} type="image/webp">
               <img
-                src={`/${post.data.photo}`}
+                src={`${base}${post.data.photo.replace(/^\//, '')}`}
                 alt={`Featured image for ${post.data.title}`}
                 class="w-full h-auto rounded-lg"
                 loading="eager"
@@ -113,7 +115,7 @@ const structuredData = {
 
       <nav class="text-center" aria-label="Post navigation">
         <a
-          href="/blog"
+          href={`${base}blog`}
           class="inline-block px-6 py-3 border-2 border-blue-600 dark:border-blue-400 text-blue-600 dark:text-blue-400 rounded-md hover:bg-blue-600 hover:text-white dark:hover:bg-blue-400 dark:hover:text-gray-900 transition-colors duration-200"
           aria-label="Return to blog post listing"
         >

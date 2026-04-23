@@ -18,8 +18,8 @@ import SEO from "../components/SEO.astro";
     />
 
     <!-- Favicon -->
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/favicon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href={`${import.meta.env.BASE_URL}favicon.png`} />
+    <link rel="apple-touch-icon" sizes="180x180" href={`${import.meta.env.BASE_URL}favicon.png`} />
 
     <!-- Theme Color -->
     <meta name="theme-color" content="#ffffff" />
@@ -65,7 +65,7 @@ import SEO from "../components/SEO.astro";
 
         <!-- Simple Home Link -->
         <a
-          href="/"
+          href={import.meta.env.BASE_URL}
           class="inline-block text-lg text-blue-600 dark:text-blue-400 hover:underline hover:scale-105 transition-transform duration-200"
         >
           ← Take me home
