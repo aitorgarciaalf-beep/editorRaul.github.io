@@ -5,6 +5,7 @@ published: true
 date: 2025-11-10
 author: "amirdaraee"
 keywords: ["test", "demo", "functionality", "astro"]
+photo: "/sample-4.jpg"
 language: "en"
 ---
 

@@ -5,7 +5,7 @@ published: true
 date: 2024-01-05
 author: "amirdaraee"
 keywords: ["customization", "theming", "configuration", "design"]
-photo: "/sample-2.jpg"
+photo: "/sample-3.jpg"
 language: "en"
 ---
 
