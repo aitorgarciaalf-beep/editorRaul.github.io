@@ -35,7 +35,11 @@ jobs:
         run: npm ci
 
       - name: Build project
-        run: npm run build
+        # Pages reports an http:// origin when HTTPS isn't enforced (e.g. custom
+        # domains behind a CDN), but the site is always reachable over https.
+        run: |
+          export ASTRO_SITE="${ASTRO_SITE/#http:/https:}"
+          npm run build
         env:
           ASTRO_SITE: ${{ steps.pages.outputs.origin }}
           ASTRO_BASE: ${{ steps.pages.outputs.base_path }}
